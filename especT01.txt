@@ -1,0 +1,44 @@
+Ao iniciar
+-Verificar se existe o arquivo de dados
+	se existir: abrir o arquivo para escrita e leitura
+	se não existir: criar o arquivo de dados no disco, abrindo para escrita e leitura
+
+-Verificar se existem os arquivos de indices
+	Se existirem:
+		Se estiverem consistentes: carregar os indices para RAM.
+		Senão: refazer os indices e carrega-los para RAM.
+	Se não existirem: criar os indices na RAM e grava-los no disco.
+
+Interação com o usuário
+	- Cadastro
+	- Alteração
+	- Remoção
+	- Busca
+		por código
+		por nome da equipe vencedora
+		por apelido do mvp
+	- Listagem
+		por código
+		por nome da equipe vencedora
+		por apelido do mvp
+	- Liberar espaço
+	- Finalizar
+
+Implementação
+	- Estrutura de dados para armazenar os indices em RAM.
+	- Verificar se o arquivo de dados existe.
+	- Verificar se o indice primario existe.
+	- Verificar se os indices secundários existem.
+	- Criar o indice primário.
+	- Criar os indices secundários.
+	- Carregar os indices do disco para RAM.
+	- Inserir registro
+	- Buscar registro
+	- Alterar registro
+	- Remover registro
+	- Listar registros
+	- Liberar espaço
+	- Atualizar todos os indices
+
+	implementar uma main, um arquivo com as funcoes .c, as definicoes no .h e fornecer um Makefile.
+	{RA1}_{RA2}_ED2_T01.c  {RA1}_{RA2}_ED2_T01.h
