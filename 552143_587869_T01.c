@@ -175,4 +175,6 @@ char *gera_chave_primaria() {
 	
 }
 
-LALALALALALALAL TESTE LALALALALALALAL
+
+
+teste commit command line
