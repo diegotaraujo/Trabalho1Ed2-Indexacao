@@ -174,3 +174,5 @@ char *le_apelido_mvp() {
 char *gera_chave_primaria() {
 	
 }
+
+LALALALALALALAL TESTE LALALALALALALAL
