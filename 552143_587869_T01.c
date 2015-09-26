@@ -26,6 +26,7 @@ Autores:
 
 //setar o tamanho das strings!<<<<<<<<<<<<<< um byte a mais que especificado no pdf para guardar o '\0' (6 bytes serão guardados como 5 no 
 //arquivo quando excluirmos o '\0')
+
 struct data {
 	int dia[3];
 	int mes[3];
@@ -51,6 +52,20 @@ int main () {
 	de indice secundario para o nome da equipe vencedora e de indice secundario para apelido do MVP*/
 	FILE *data_file, *index_file, *winner_index_file, *mvp_index_file;
 	int opcao;
+	
+	
+	/*
+	Ao iniciar
+		-Verificar se existe o arquivo de dados
+			se existir: abrir o arquivo para escrita e leitura
+			se não existir: criar o arquivo de dados no disco, abrindo para escrita e leitura
+
+		-Verificar se existem os arquivos de indices
+			Se existirem:
+				Se estiverem consistentes: carregar os indices para RAM.
+				Senão: refazer os indices e carrega-los para RAM.
+			Se não existirem: criar os indices na RAM e grava-los no disco.
+	*/		
 
 	do {
 		scanf("%d", &opcao);
@@ -63,7 +78,7 @@ int main () {
 				novo.equipe_vermelha = le_nome_equipe();
 				data_partida = le_data();
 				novo.duracao = le_duracao();
-				novo.equipe_vencedora = le_vencedora(); //Tratar (na função) se o nome é da azul/vermelha ou não!
+				novo.equipe_vencedora = le_vencedora(); // tratei, falta passar o novo como parametro da funcao
 				novo.placar_azul = le_placar();
 				novo.placar_vermelha = le_placar();
 				apelido_mvp = le_apelido_mvp();
@@ -77,13 +92,25 @@ int main () {
 			break;
 
 			case BUSCAR_PARTIDA:
+				/*por código
+				por nome da equipe vencedora
+				por apelido do mvp*/
+				
 			break;
 
 			case LISTAR_PARTIDAS:
+				/*por código
+				por nome da equipe vencedora
+				por apelido do mvp*/
+
 			break;
 
 			case LIBERAR_ESPACO:
 			break;
+
+			default:
+				printf(ENTRADA_INVALIDA);
+			break;			
 		}
 	} while(opcao != 7)	//Segundo a descricao do problema, a opcao de finalizar eh a de numero 7
 
@@ -123,8 +150,20 @@ RETORNO le_data() {
 char *le_vencedora() {
 	char vencedora[40];
 	
-	scanf("%39[\n]", vencedora);
-	getchar(); //Tira \n do buffer
+	int flag = 0;	
+
+	do{
+		scanf("%39[\n]", vencedora);
+		getchar(); //Tira \n do buffer
+		
+		if(!strcmp(novo.equipe_azul, vencedora)
+			flag = 1;
+		else if(!strcmp(novo.equipe_vermelha, vencedora)
+			flag = 1;
+		else
+			flag = 0;
+
+	}while(flag == 0);
 	
 	return vencedora;
 }
@@ -174,7 +213,3 @@ char *le_apelido_mvp() {
 char *gera_chave_primaria() {
 	
 }
-
-
-
-teste commit command line
