@@ -14,142 +14,191 @@ Autores:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define INSERIR_PARTIDA 	1
 #define REMOVER_PARTIDA 	2
-#define MODIFICAR_DURACAO 	3
-#define BUSCAR_PARTIDA 		4
+#define BUSCAR_PARTIDA 		3
+#define MODIFICAR_DURACAO 	4
 #define LISTAR_PARTIDAS 	5
 #define LIBERAR_ESPACO 		6
+#define SAIR				7
 
-#define ENTRADA_INVALIDA "Campo inválido! Informe novamente:"
+#define ENTRADA_INVALIDA 		"Campo inválido! Informe novamente:\n"
+#define PARTIDA_N_ENCONTRADA	"Partida não encontrada!\n"
 
 //setar o tamanho das strings!<<<<<<<<<<<<<< um byte a mais que especificado no pdf para guardar o '\0' (6 bytes serão guardados como 5 no 
 //arquivo quando excluirmos o '\0')
 
-//Definição das estruturas usadas
-struct data {
-	int dia[3];
-	int mes[3];
-	int ano[5];
-}
-typedef data Data;
-
-struct partida {
+typedef struct partida {
 	char equipe_azul[40];
 	char equipe_vermelha[40];
 	char equipe_vencedora[40];
 	char apelido_mvp[40];
-	Data data_partida;
+	char data[12]; 
 	char duracao[6];
 	char placar_azul[3];
 	char placar_vermelha[3];
 	char chave_primaria[9];
-};
-typedef struct partida Partida;
+} Partida;
+
+typedef struct {
+	char primaria[9];
+	long long int rrn;
+} indexStruct;
 
 //Prototipos das funções usadas
 					//Estrutura de dados para armazenar os indices em RAM. ??????????????NÃO ENTENDI??????????
-verificarArquivoDados(); //Verificar se o arquivo de dados existe
-verificarIndicePrimario(); //Verificar se o indice primario existe
-verificarIndiceSecundario(); //Verificar se os indices secundários existem
-criarIndicePrimario(); //Criar o indice primário
-criarIndiceSecundario(); //Criar os indices secundários
-carregarIndices(); //Carregar os indices (DISCO PARA RAM)
+int verificarArquivoDados(FILE *); //Verificar se o arquivo de dados existe
+int verificarIndicePrimario(FILE *); //Verificar se o indice primario existe
+int verificarIndiceSecundario(FILE *, char *); //Verificar se os indices secundários existem
+int criarIndicePrimario(FILE *); //Criar o indice primário
+int criarIndiceSecundario(FILE *, char *); //Criar os indices secundários
+int carregarIndices(); //Carregar os indices (DISCO PARA RAM)
 Partida inserirPartida(); //Inserir registro
-buscarPartida(); //Buscar registro
-alterarPartida(); //Alterar registro
-removerPartida(); //Remover registro
-listarPartidas(); //Listar registros
-liberarEspaço(); //Liberar espaço
-atualizarIndices(); //Atualizar todos os indices
+int buscarPartida(); //Buscar registro
+int alterarPartida(); //Alterar registro
+int removerPartida(); //Remover registro
+void listarPartidas(); //Listar registros
+void liberarEspaco(); //Liberar espaço
+int atualizarIndices(); //Atualizar todos os indices
 
 int main () {
-	/*variaveis para arquivos, respectivamente: de dados, de indice primario, 
-	de indice secundario para o nome da equipe vencedora e de indice secundario para apelido do MVP*/
+	/* Variaveis para arquivos, respectivamente: de dados, de indice primario, 
+	de indice secundario para o nome da equipe vencedora e de indice secundario para apelido do MVP */
 	FILE *data_file, *index_file, *winner_index_file, *mvp_index_file;
 	int opcao;
-	
-	
-	/*
-	Ao iniciar
+	int existe;
+	int tamanho, numero_sharps, qtdRRN=0, i, j, tamanhoPrimario=0;
+	char c;
+	Partida partida;
+	indexStruct vetorPrimario[1000];
+
+	/* Ao iniciar
 		-Verificar se existe o arquivo de dados
 			se existir: abrir o arquivo para escrita e leitura
 			se não existir: criar o arquivo de dados no disco, abrindo para escrita e leitura
+	*/
 
-		-Verificar se existem os arquivos de indices
+	existe = verificarArquivoDados(data_file);
+	if(!existe)
+		data_file = fopen("matches.dat", "w");
+	else 
+		data_file = fopen("matches.dat", "r+");
+	
+	/* -Verificar se existem os arquivos de indices
 			Se existirem:
 				Se estiverem consistentes: carregar os indices para RAM.
 				Senão: refazer os indices e carrega-los para RAM.
 			Se não existirem: criar os indices na RAM e grava-los no disco.
 	*/		
+	
+	//Arquivo de índices primários
+	existe = verificarIndicePrimario(index_file);
+	if(!existe)
+		index_file = fopen("iprimary.idx", "w");
+	else {
+		index_file = fopen("iprimary.idx", "r+");
+
+		while(!EOF){
+			i=0;
+			
+			for(j=0; j<9; j++)
+				fscanf(index_file, "%c", vetorPrimario[i].primaria[j]); 
+			
+			fscanf(index_file, "%c",&c); //"desconsiderar @
+			fscanf(index_file, "%d", vetorPrimario[i].rrn); //vetor[i].rrn = %dRRN
+			fscanf(index_file, "%c",&c); //desconsiderar #
+			i++;
+			tamanhoPrimario++;
+		}
+	}
 
 	do {
 		scanf("%d", &opcao);
+		getchar();
 
-		switch(opc) {
+		switch(opcao) {
 			case INSERIR_PARTIDA:
 
-				Partida p;
-
-				p = inserirPartida(); // unica funcao para leitura dos campos. Devolve uma struct partida
+				partida = inserirPartida(); // unica funcao para leitura dos campos. Devolve uma struct partida
 				
-				/*novo.equipe_azul = le_nome_equipe();
-				novo.equipe_vermelha = le_nome_equipe();
-				data_partida = le_data();
-				novo.duracao = le_duracao();
-				novo.equipe_vencedora = le_vencedora(); // tratei, falta passar o novo como parametro da funcao
-				novo.placar_azul = le_placar();
-				novo.placar_vermelha = le_placar();
-				apelido_mvp = le_apelido_mvp();
-				//GERAR CHAVE PRIMARIA, FUNÇÃO JÁ DECLARADA
-				*/
+				/* Inserção da partida em data_file */
+				fprintf(data_file, "%s@", partida.chave_primaria);
+				fprintf(data_file, "%s@", partida.equipe_azul);
+				fprintf(data_file, "%s@", partida.equipe_vermelha);
+				fprintf(data_file, "%s@", partida.data);
+				fprintf(data_file, "%s@", partida.duracao);
+				fprintf(data_file, "%s@", partida.equipe_vencedora);
+				fprintf(data_file, "%s@", partida.placar_azul);
+				fprintf(data_file, "%s@", partida.placar_vermelha);
+				fprintf(data_file, "%s@", partida.apelido_mvp);
+				tamanho = 8 + strlen(partida.equipe_azul) + strlen(partida.equipe_vermelha) + 10 + 5 + strlen(partida.equipe_vencedora) + 2 + 2 + strlen(partida.apelido_mvp) + 9;
+				numero_sharps = 192 - tamanho;
+				while(numero_sharps  > 0){
+					fprintf(data_file, "#", partida.duracao);
+					numero_sharps--;
+				}
+				fflush(data_file);
+
+				//Inserção ordenada em index_file (InsertionSort?)
+					
+				vetorPrimario[tamanhoPrimario].primaria = partida.chave_primaria;
+				vetorPrimario[tamanhoPrimario].rrn = rrn;
+					
+				ordenaVetor(vetorPrimario);
+
+				qtdRRN+=192;
+				tamanhoPrimario++;
+
+				//Inserção da partida em winner_index_file
+				//Inserção da partida em mvp_index_file
+				
+			break;
+
+			case BUSCAR_PARTIDA:	
+				/*por código
+				por nome da equipe vencedora
+				por apelido do mvp*/
 			break;
 
 			case REMOVER_PARTIDA:
 			
 				if(buscarPartida())
 					//se encontrar devolve a posicao
-					removerPartida()
-				
+					removerPartida();				
 				else
-					printf("Partida não encontrada!\n");
-				
+					printf(PARTIDA_N_ENCONTRADA);
 			break;
 
 			case MODIFICAR_DURACAO:
 			
 				if(buscarPartida())
 					//se encontrar devolve a posicao
-					alterarPartida()
+					alterarPartida();
 				
 				else
-					printf("Partida não encontrada!\n");
-				
-			break;
-
-			case BUSCAR_PARTIDA:
-				/*por código
-				por nome da equipe vencedora
-				por apelido do mvp*/
-				
+					printf(PARTIDA_N_ENCONTRADA);
 			break;
 
 			case LISTAR_PARTIDAS:
 				/*por código
 				por nome da equipe vencedora
 				por apelido do mvp*/
-
 			break;
 
 			case LIBERAR_ESPACO:
+			break;
+
+			case 7:
+				return 0;
 			break;
 
 			default:
 				printf(ENTRADA_INVALIDA);
 			break;			
 		}
-	} while(opcao != 7)	//Segundo a descricao do problema, a opcao de finalizar eh a de numero 7
+	} while(opcao != 7);	//Segundo a descricao do problema, a opcao de finalizar eh a de numero 7
 
 
 	return 0;
@@ -160,249 +209,154 @@ int main () {
 Partida inserirPartida(){
 	
 	Partida novo;
-	
 	int flag = 0;
-
 	char equipeAzul[40], equipeVermelha[40], equipeVencedora[40], apelidoMvp[40], duracaoPartida[6], placarAzul[3], placarVermelha[3], chavePK[9];
-	Data dataPartida;
-	
-	//Leitura das equipes
-	scanf("%39[\n]", equipeAzul);
-	getchar();
-	
-	scanf("%39[\n]", equipeVermelha);
-	getchar();
-	
-	
-	novo.equipe_azul = equipeAzul;
-	novo.equipe_vermelha = equipeVermelha;
-		
-	//Leitura da data
-	
-	flag = 0;
-	do {
-		flag = 0;
-		scanf("%d/%d/%d", &dataPartida.dia, &dataPartida.mes, &dataPartida.ano);
-		if(dataPartida.dia < 1 || dataPartida.dia > 31 || dataPartida.mes < 1 || dataPartida.mes > 12 || dataPartida.ano < 2011 || dataPartida.ano > 2015) {
-			flag = 1;
-			printf(ENTRADA_INVALIDA);
-		}
-	} while(flag == 1);
 
-	novo.data_partida = dataPartida;
+	//Leitura das equipes
+	scanf("%39[^\n]", novo.equipe_azul);
+	getchar();
+
+	scanf("%39[^\n]", novo.equipe_vermelha);
+	getchar();
+	
+	//LE DATAS
+	scanf("%[^\n]", novo.data);
+	getchar();
+
+	if(strlen(novo.data) == 11)
+		printf("a");
 
 	//Leitura da duracao
-	
 	flag = 0;
 	do {
-		scanf("%5[\n]", duracaoPartida);
+		scanf("%5[^\n]", novo.duracao);
 		getchar();	//Tira \n do buffer
-		flag = strlen(duracaoPartida);
+		flag = strlen(novo.duracao);
 		if(flag != 5)
-			printf(ENTRADA_INVALIDA);
+			printf("ROLA");
 	} while (flag != 5);
 
-	novo.duracao = duracaoPartida;
-
 	//Leitura da equipe vencedora
-	
-	flag = 0;
 	do{
-		scanf("%39[\n]", equipeVencedora);
+		flag = 0;
+		scanf("%39[^\n]", novo.equipe_vencedora);
 		getchar(); //Tira \n do buffer
 		
-		if(!strcmp(equipeAzul, equipeVencedora)
+		if(!strcmp(novo.equipe_azul, novo.equipe_vencedora) && !strcmp(novo.equipe_vermelha, novo.equipe_vencedora))
 			flag = 1;
-		else if(!strcmp(equipeVermelha, equipeVencedora)
-			flag = 1;
-		else
-			flag = 0;
+		if(flag)
+			printf("PERU");
 
-	}while(flag == 0);
-	
-	novo.equipe_vencedora = equipeVencedora;
+	}while(flag == 1);
 
 	//Leitura dos placares
+	flag = 0;
+	do {
+		scanf("%2[^\n]", novo.placar_azul);
+		getchar();	//Tira \n do buffer
+		flag = strlen(novo.placar_azul);
+		if(flag != 2)
+			printf("CARALHA DE ASA");
+	} while(flag != 2);
 	
 	flag = 0;
-
 	do {
-		scanf("%2[\n]", placarAzul);
+		scanf("%2[^\n]", novo.placar_vermelha);
 		getchar();	//Tira \n do buffer
-		flag = strlen(placarAzul);
+		flag = strlen(novo.placar_vermelha);
 		if(flag != 2)
-			printf(ENTRADA_INVALIDA);
+			printf("PIROCA");
 	} while (flag != 2);
-
-	novo.placar_azul = placarAzul;
-	
-	flag = 0;
-
-	do {
-		scanf("%2[\n]", placarVermelha);
-		getchar();	//Tira \n do buffer
-		flag = strlen(placarVermelha);
-		if(flag != 2)
-			printf(ENTRADA_INVALIDA);
-	} while (flag != 2);
-
-	novo.placar_vermelha = placarVermelha;
 
 	//Leitura do apelido
-
-	scanf("%39[\n]", apelidoMvp);
+	scanf("%39[^\n]", novo.apelido_mvp);
 	getchar();	//Tira \n do buffer
 	
-	novo.apelido_mvp = apelidoMvp;
-	
-	//Gerar a chave primaria
+	novo.chave_primaria[0] = toupper(novo.equipe_azul[0]);
+	novo.chave_primaria[1] = toupper(novo.equipe_vermelha[0]);
+	novo.chave_primaria[2] = toupper(novo.apelido_mvp[0]);
+	novo.chave_primaria[3] = toupper(novo.apelido_mvp[1]);
 
-	/*
-		composicao de letras maiusculas da primeira letra do nome da equipe azul, seguida da primeira letra do nome da equipe vermelha, seguida das duas primeiras letras do apelido do mvp, o dia e o mes da partida.
+	novo.chave_primaria[4] = novo.data[0];
+	novo.chave_primaria[5] = novo.data[1];
+	novo.chave_primaria[6] = novo.data[3];
+	novo.chave_primaria[7] = novo.data[4];
 
-		Exemplo: FTFE0705
-			Fnatic
-			Team Mid-Solo
-			Ferbien
-			07/05
-	*/
-
-	chavePK[0] = toupper(equipeAzul[0]);
-	chavePK[1] = toupper(equipeVermelha[0]);
-	chavePK[2] = toupper(apelidoMvp[0]);
-	chavePK[3] = toupper(apelidoMvp[2]);
-	
-	strcat(chavePK, dataPartida.dia);
-	strcat(chavePK, dataPartida.mes);
-	chavePK[8] = '\0';
-	
-	// Retorno da struct construida
-
+	novo.chave_primaria[8] = '\0';
 	return novo;
 }
 
 
+/* Retorna 1 se o arquivo de dados existir */
+int verificarArquivoDados(FILE *dataFile) {
+	dataFile = fopen("matches.dat", "r");
+	if(!dataFile)
+		return 0;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*======================================================- LIMBO -====================================================== */
-
-
-/* Lê nome da equipe azul */
-char *le_nome_equipe() {
-	char equipe[40];
-
-	scanf("%39[\n]", equipe);
-	getchar();	//Tira \n do buffer
-	return equipe;
+	return 1;
 }
 
-/* Lê e trata a data da partida */
-RETORNO le_data() {
-	Data data;
-	int flag=0;
+int verificarIndicePrimario(FILE *primFile) {
+	primFile = fopen("iprimary.idx", "r");
+	if(!primFile)
+		return 0;
 
-	do {
-		flag = 0;
-		scanf("%d/%d/%d", &data.dia, &data.mes, &data.ano);
-		if(data.dia < 1 || data.dia > 31 || data.mes < 1 || data.mes > 12 || data.ano < 2011 || data.ano > 2015) {
-			flag = 1;
-			printf(ENTRADA_INVALIDA);
-		}
-	} while(flag == 1);
-	
-	return data;
+	return 1;
 }
 
-/* Lê e trata o nome da equipe vencedora */
-char *le_vencedora() {
-	char vencedora[40];
-	
-	int flag = 0;	
+int verificarIndiceSecundario(FILE *secFile, char *nome) {
+	secFile = fopen(nome, "r");
+	if(!secFile)
+		return 0;
 
-	do{
-		scanf("%39[\n]", vencedora);
-		getchar(); //Tira \n do buffer
-		
-		if(!strcmp(novo.equipe_azul, vencedora)
-			flag = 1;
-		else if(!strcmp(novo.equipe_vermelha, vencedora)
-			flag = 1;
-		else
-			flag = 0;
-
-	}while(flag == 0);
-	
-	return vencedora;
+	return 1;
 }
 
-/* Lê e trata o placar da equipe */
-char *le_placar() {
-	char placar[3];
-	int tamanho_placar;
+int criarIndicePrimario(FILE *primFile) {
+	primFile = fopen("iprimary.idx", "w");
+	if(!primFile) {
+		perror("Ocorreu um erro ao abrir o arquivo de índices primário!\n");
+		return 1;
+	}
 
-	do {
-		scanf("%2[\n]", placar);
-		getchar();	//Tira \n do buffer
-		tamanho_placar = strlen(placar);
-		if(tamanho_placar != 2)
-			printf(ENTRADA_INVALIDA);
-	} while (tamanho_placar != 2);
-
-	return placar;
+	return 0;
 }
 
-/*Lê e trata a duração da partida */
-char *le_duracao() {
-	int tamanho_duracao;
-	char duracao[6];
+int criarIndiceSecundario(FILE *secFile, char *nome) {
+	secFile = fopen(nome, "w");
+	if(!secFile) {
+		perror("Ocorreu um erro ao abrir o arquivo de índices secundário!\n");
+		return 1;	
+	}
 
-	do {
-		scanf("%5[\n]", duracao);
-		getchar();	//Tira \n do buffer
-		tamanho_duracao = strlen(duracao);
-		if(tamanho_duracao != 5)
-			printf(ENTRADA_INVALIDA);
-	} while (tamanho_duracao != 5);
-
-	return duracao;
+	return 0;
 }
 
-/* Lẽ apelido do mvp */
-char *le_apelido_mvp() {
-	char apelido_mvp[40];
+int carregarIndices(char **indices) {
 
-	scanf("%39[\n]", apelido_mvp);
-	getchar();	//Tira \n do buffer
-	return apelido_mvp;
+	return 0;
 }
 
-/* Gera a chave primária */
-char *gera_chave_primaria() {
+int buscarPartida() {
+	return 0;
+}
 
-	/*
-		composicao de letras maiusculas da primeira letra do nome da equipe azul, seguida da primeira letra do nome da equipe vermelha, seguida das duas primeiras letras do apelido do mvp, o dia e o mes da partida.
+int alterarPartida() {
+	return 0;
+}
 
-		Exemplo: FTFE0705
-			Fnatic
-			Team Mid-Solo
-			Ferbien
-			07/05
-	*/
-	
+int removerPartida() {
+	return 0;
+}
+
+void listarPartidas() {
+
+}
+
+void liberarEspaco() {
+
+}
+
+int atualizarIndices() {
+	return 0;
 }
