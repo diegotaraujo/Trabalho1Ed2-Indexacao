@@ -62,6 +62,7 @@ int removerPartida(); //Remover registro
 void listarPartidas(); //Listar registros
 void liberarEspaco(); //Liberar espaço
 int atualizarIndices(); //Atualizar todos os indices
+int ordenaIndicePrimario(indexStruct *, int , indexStruct);
 
 int main () {
 	/* Variaveis para arquivos, respectivamente: de dados, de indice primario, 
@@ -72,7 +73,7 @@ int main () {
 	int tamanho, numero_sharps, qtdRRN=0, i, j, tamanhoPrimario=0;
 	char c;
 	Partida partida;
-	indexStruct vetorPrimario[1000];
+	indexStruct vetorPrimario[10000], novoIndice;
 
 	/* Ao iniciar
 		-Verificar se existe o arquivo de dados
@@ -143,10 +144,11 @@ int main () {
 
 				//Inserção ordenada em index_file (InsertionSort?)
 					
-				vetorPrimario[tamanhoPrimario].primaria = partida.chave_primaria;
-				vetorPrimario[tamanhoPrimario].rrn = rrn;
+				novoIndice.primaria = partida.chave_primaria;				
+				novoIndice.rrn = rrn;
 					
-				ordenaVetor(vetorPrimario);
+				if(!ordenaIndicePrimario(vetorPrimario, tamanhoPrimario, novoIndice))
+					printf("Vetor de indices primarios cheio!\n");
 
 				qtdRRN+=192;
 				tamanhoPrimario++;
@@ -156,15 +158,28 @@ int main () {
 				
 			break;
 
-			case BUSCAR_PARTIDA:	
-				/*por código
-				por nome da equipe vencedora
+			case BUSCAR_PARTIDA:
+				//por código
+				ler o codigo
+				atribuir no novoIndice.primaria
+
+				buscarPrimario no vetorPrimario
+					return o rrn se achar
+					return 0 se não encontrar				
+				
+				/*por nome da equipe vencedora
 				por apelido do mvp*/
+				ler o campo de mvp ou equipe vencedora
+				atribuir no novo.IndiceSecundario // 2 vetores?
+				
+				buscarSecundário no vetorSecundario
+					return 
+				
 			break;
 
 			case REMOVER_PARTIDA:
 			
-				if(buscarPartida())
+				if(buscarPartida()) //buscarPrimario e buscarSecundario.
 					//se encontrar devolve a posicao
 					removerPartida();				
 				else
@@ -359,4 +374,22 @@ void liberarEspaco() {
 
 int atualizarIndices() {
 	return 0;
+}
+
+int ordenaIndicePrimario(indexStruct *vetorPrimario, int tamanhoPrimario, indexStruct novoIndice){
+	
+	int i, j;	
+
+	if(tamanhoPrimario == 10000)
+		return 0;
+
+	for(i=0; i < tamanhoPrimario; i++){
+		if(strcmp(vetorPrimario[i].primaria,novoIndice.primaria) > 0){
+			for(j=tamanhoPrimario-1; j>=i; j--){
+				vetorPrimario[j+1] = vetorPrimario[j]; 
+			}
+			vetorPrimario[i] = novoIndice;	
+			return 1;		
+		}
+	}
 }
