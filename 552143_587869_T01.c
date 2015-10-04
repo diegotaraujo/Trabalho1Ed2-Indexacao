@@ -3,10 +3,8 @@ Universidade Federal de São Carlos, Campus Sorocaba
 Bacharelado em Ciência da Computação
 Estrutura de Dados 2
 Prof. Tiago A. Almeida
-
 TRABALHO 01 - INDEXAÇÃO
 Setembro de 2015
-
 Autores:
 	Diego Tenorio de Araújo, 552143
 	Gabriel Alves Bento, 587869
@@ -93,38 +91,47 @@ int main () {
 	if(!existe)
 		data_file = fopen("matches.dat", "w");
 	else 
-		data_file = fopen("matches.dat", "r+");
+		data_file = fopen("matches.dat", "a");	
 	
-	/* -Verificar se existem os arquivos de indices
-			Se existirem:
-				Se estiverem consistentes: carregar os indices para RAM.
-				Senão: refazer os indices e carrega-los para RAM.
-			Se não existirem: criar os indices na RAM e grava-los no disco.
-	*/		
-	
-	//Arquivo de índices primários
 	existe = verificarIndicePrimario(index_file);
 	if(!existe)
 		index_file = fopen("iprimary.idx", "w");
 	else{
-		index_file = fopen("iprimary.idx", "r+");
+		index_file = fopen("iprimary.idx", "r");
 		
 		fscanf(index_file, "%c\n", &controle);
-		if(controle == 'S')
+		if(controle == 'S'){
 			printf("Indice primario atualizado\n");
-		else
-			printf("Indice primário desatualizado\n");
+			i=0;
 
-		/*while(index_file != EOF){
-			
-			fscanf(index_file, "%c", vetorPrimario[i].primaria[j]); 
-			
-			fscanf(index_file, "%c",&c); //"desconsiderar @
-			fscanf(index_file, "%llu", vetorPrimario[i].rrn); //vetor[i].rrn = %dRRN
-			fscanf(index_file, "%c",&c); //desconsiderar #
-			i++;
-			tamanhoPrimario++;
-		}*/
+			while(!feof(index_file)){
+				fscanf(index_file, "%s %lld ", vetorPrimario[i].primaria, &vetorPrimario[i].rrn);
+
+				tamanhoPrimario++;
+				i++;
+				qtdRRN+=192;
+			}
+		}
+		else{
+			printf("Indice primário desatualizado\n");
+			i=0;
+			printf("AAAAAAAAAAA!!\n");
+
+			while(fscanf(data_file, "%s", vetorPrimario[i].primaria) != EOF){
+				vetorPrimario[i].rrn  = qtdRRN;
+				tamanhoPrimario++;
+				i++;
+				qtdRRN+=192;
+
+				fseek(data_file, (192 - strlen(vetorPrimario[i].primaria)), SEEK_CUR);
+			}
+
+			for(i=0; i< tamanhoPrimario; i++){
+				printf("%s %lld\n", vetorPrimario[i].primaria, vetorPrimario[i].rrn);
+			}
+		}
+
+		fclose(index_file);
 	}
 
 	do {
@@ -157,11 +164,30 @@ int main () {
 				strcpy(novoIndice.primaria, partida.chave_primaria);				
 				novoIndice.rrn = qtdRRN;
 
-				if(!ordenaIndicePrimario(vetorPrimario, tamanhoPrimario, novoIndice))
-					printf("Vetor de indices primarios cheio!\n");
+				flag = 0;
 
-				qtdRRN+=192;
-				tamanhoPrimario+=1;
+				for(i=0; i<tamanhoPrimario; i++){
+					if(strcmp(vetorPrimario[i].primaria, novoIndice.primaria) == 0){
+						flag = 1;
+						break;
+					}
+				}
+
+				if(!flag){	
+					if(!ordenaIndicePrimario(vetorPrimario, tamanhoPrimario, novoIndice))
+						printf("Vetor de indices primarios cheio!\n");
+
+					qtdRRN+=192;
+					tamanhoPrimario+=1;
+
+					index_file = fopen("iprimary.idx", "w");
+					rewind(index_file);
+					fprintf(index_file, "N\n");								
+					fclose(index_file);
+				}
+				else{
+					printf("Chave primaria já inserida!\n");
+				}
 
 				/* Inserção da partida em winner_index_file */
 				/* Inserção da partida em mvp_index_file */
@@ -173,9 +199,7 @@ int main () {
 				getchar();
 
 				switch(opcao2) {
-					//por código
 					case 1:
-						//Leitura da chave primaria
 						scanf("%8[^\n]", busca_chave_primaria);
 						getchar();
 
@@ -189,9 +213,17 @@ int main () {
 							}
 						}
 						
-						if(!flag)
+						if(!flag){
 							printf(REGISTRO_N_ENCONTRADO);
-							//imprimirPartida(index_file); //Completar a funcao
+
+							index_file = fopen("iprimary.idx", "w");
+							rewind(index_file);
+							fprintf(index_file, "N\n");								
+							fclose(index_file);
+						}
+						else{
+							printf("Chave primaria já inserida!\n");
+						}
 					break;
 
 					//por nome da equipe vencedora
@@ -226,18 +258,21 @@ int main () {
 						if(strcmp(vetorPrimario[i].primaria, busca_chave_primaria) == 0){
 							vetorPrimario[i].primaria[7] = 'Z';
 							flag = 1;
-							//printf("%s\n", vetorPrimario[i].primaria);
 							break;
 						}
 					}
 					
-					if(!flag)
+					if(!flag){
 						printf(REGISTRO_N_ENCONTRADO);
 
-				//se encontrar devolve a posicao
-				//	removerPartida();				
-				//else
-				//	printf(PARTIDA_N_ENCONTRADA);
+						index_file = fopen("iprimary.idx", "w");
+						rewind(index_file);
+						fprintf(index_file, "N\n");								
+						fclose(index_file);
+					}
+					else{
+						printf("Chave primaria já inserida!\n");
+					}
 			break;
 
 			case MODIFICAR_DURACAO:
@@ -255,13 +290,21 @@ int main () {
 					if(strcmp(vetorPrimario[i].primaria, busca_chave_primaria) == 0){
 						printf("%s\n", altera_duracao);				
 						flag = alterarPartida(data_file, vetorPrimario[i].rrn, altera_duracao);
-						//printf("%s\n", vetorPrimario[i].primaria);
 						break;
 					}
 				}
 					
-				if(!flag)
-					printf(PARTIDA_N_ENCONTRADA);
+				if(!flag){
+					printf(REGISTRO_N_ENCONTRADO);
+
+					index_file = fopen("iprimary.idx", "w");
+					rewind(index_file);
+					fprintf(index_file, "N\n");								
+					fclose(index_file);
+				}
+				else{
+					printf("Chave primaria já inserida!\n");
+				}
 
 			break;
 
@@ -270,14 +313,10 @@ int main () {
 				getchar();
 
 				switch(opcao2) {
-					//por codigo
-
 					case 1:
 						for(i=0; i<tamanhoPrimario; i++){
 								imprimirPartida(data_file, vetorPrimario[i].rrn);
 						}
-
-						//exibe na ordem lexicografica
 					break;
 
 					//por nome da equipe vencedora
@@ -297,30 +336,21 @@ int main () {
 			break;
 
 			case 7:
-				//atualizar os indices no disco (?)
-				
-				//atualizar indice primario
-				//fprintf(index_file, "N");
-				//rewind(index_file);
-				//fprintf(index_file, "N\n");								
-			
-				fclose(index_file);				
-				
+				//atualizar os indices no disco (?)						
+							
 				index_file = fopen("iprimary.idx", "w+");
 				
-				for(i=0; i< tamanhoPrimario; i++)
-					fprintf(index_file, "@%s@%llu", vetorPrimario[i].primaria, vetorPrimario[i].rrn);
+				fprintf(index_file, "N\n");								
+
+				for(i=0; i< tamanhoPrimario; i++){
+					fprintf(index_file, "%s %lld ", vetorPrimario[i].primaria, vetorPrimario[i].rrn);
+				}
 				
 				rewind(index_file);
 				fprintf(index_file, "S\n");								
 				fclose(index_file);				
 
 				fclose(data_file);
-
-				//fclose(winner_index_file);
-				//printf("AQUI!\n");
-				//fclose(mvp_index_file);
-				//liberar memoria alocada
 				return 0;
 			break;
 
@@ -328,8 +358,7 @@ int main () {
 				printf(ENTRADA_INVALIDA);
 			break;			
 		}
-	} while(opcao != 7);	//Segundo a descricao do problema, a opcao de finalizar eh a de numero 7
-
+	} while(opcao != 7);
 
 	return 0;
 }
