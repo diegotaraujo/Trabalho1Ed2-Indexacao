@@ -26,6 +26,7 @@ Autores:
 
 #define ENTRADA_INVALIDA 		"Campo inválido! Informe novamente:\n"
 #define PARTIDA_N_ENCONTRADA	"Partida não encontrada!\n"
+#define REGISTRO_N_ENCONTRADO	"Registro não encontrado!\n"
 
 //setar o tamanho das strings!<<<<<<<<<<<<<< um byte a mais que especificado no pdf para guardar o '\0' (6 bytes serão guardados como 5 no 
 //arquivo quando excluirmos o '\0')
@@ -48,7 +49,6 @@ typedef struct {
 } indexStruct;
 
 //Prototipos das funções usadas
-					//Estrutura de dados para armazenar os indices em RAM. ??????????????NÃO ENTENDI??????????
 int verificarArquivoDados(FILE *); //Verificar se o arquivo de dados existe
 int verificarIndicePrimario(FILE *); //Verificar se o indice primario existe
 int verificarIndiceSecundario(FILE *, char *); //Verificar se os indices secundários existem
@@ -56,14 +56,13 @@ int criarIndicePrimario(FILE *); //Criar o indice primário
 int criarIndiceSecundario(FILE *, char *); //Criar os indices secundários
 int carregarIndices(); //Carregar os indices (DISCO PARA RAM)
 Partida inserirPartida(); //Inserir registro
-int buscarPartida(); //Buscar registro
-int alterarPartida(); //Alterar registro
+int buscarPartida(indexStruct *vetorPrimario, int tamanhoPrimario, char *chavePK); //Buscar registro
+int alterarPartida(FILE *, int, char *); //Alterar registro
 int removerPartida(); //Remover registro
 void listarPartidas(); //Listar registros
 void liberarEspaco(); //Liberar espaço
 int atualizarIndices(); //Atualizar todos os indices
 int ordenaIndicePrimario(indexStruct *, int , indexStruct);
-int buscarPartida(indexStruct *, int , char *);
 
 void le_equipe(char []);
 void le_duracao(char []);
@@ -71,15 +70,16 @@ void le_vencedora(char [], char [], char []);
 void le_placar(char []);
 void le_apelido_mvp(char []);
 void le_data(char[]);
+void imprimirPartida(FILE *, int);
 
 int main () {
 	/* Variaveis para arquivos, respectivamente: de dados, de indice primario, 
 	de indice secundario para o nome da equipe vencedora e de indice secundario para apelido do MVP */
 	FILE *data_file, *index_file, *winner_index_file, *mvp_index_file;
-	int opcao;
-	int existe;
-	int tamanho, numero_sharps, qtdRRN=0, i, j, tamanhoPrimario=0, busca;
-	char c;
+	int opcao, opcao2;
+	int existe, flag, indiceRemove;
+	int tamanho, numero_sharps, qtdRRN=0, i, j, tamanhoPrimario=0;
+	char c, busca_chave_primaria[9], busca_nome_vencedora[40], busca_apelido_mvp[40], altera_duracao[6], controle;
 	Partida partida;
 	indexStruct vetorPrimario[10000], novoIndice;
 
@@ -106,21 +106,25 @@ int main () {
 	existe = verificarIndicePrimario(index_file);
 	if(!existe)
 		index_file = fopen("iprimary.idx", "w");
-	else {
+	else{
 		index_file = fopen("iprimary.idx", "r+");
+		
+		fscanf(index_file, "%c\n", &controle);
+		if(controle == 'S')
+			printf("Indice primario atualizado\n");
+		else
+			printf("Indice primário desatualizado\n");
 
-		while(!EOF){
-			i=0;
+		/*while(index_file != EOF){
 			
-			for(j=0; j<9; j++)
-				fscanf(index_file, "%c", vetorPrimario[i].primaria[j]); 
+			fscanf(index_file, "%c", vetorPrimario[i].primaria[j]); 
 			
 			fscanf(index_file, "%c",&c); //"desconsiderar @
-			fscanf(index_file, "%d", vetorPrimario[i].rrn); //vetor[i].rrn = %dRRN
+			fscanf(index_file, "%llu", vetorPrimario[i].rrn); //vetor[i].rrn = %dRRN
 			fscanf(index_file, "%c",&c); //desconsiderar #
 			i++;
 			tamanhoPrimario++;
-		}
+		}*/
 	}
 
 	do {
@@ -129,7 +133,6 @@ int main () {
 
 		switch(opcao) {
 			case INSERIR_PARTIDA:
-
 				partida = inserirPartida(); // unica funcao para leitura dos campos. Devolve uma struct partida
 				
 				/* Inserção da partida em data_file */
@@ -149,76 +152,175 @@ int main () {
 					numero_sharps--;
 				}
 				fflush(data_file);
-					
-				strcmp(novoIndice.primaria,partida.chave_primaria);				
+
+				/* Inserção ordenada em index_file */
+				strcpy(novoIndice.primaria, partida.chave_primaria);				
 				novoIndice.rrn = qtdRRN;
-					
+
 				if(!ordenaIndicePrimario(vetorPrimario, tamanhoPrimario, novoIndice))
 					printf("Vetor de indices primarios cheio!\n");
 
 				qtdRRN+=192;
-				tamanhoPrimario++;
+				tamanhoPrimario+=1;
 
-				//Inserção da partida em winner_index_file
-				//Inserção da partida em mvp_index_file
-				
+				/* Inserção da partida em winner_index_file */
+				/* Inserção da partida em mvp_index_file */
+				//imprimirPartida(data_file);
 			break;
 
 			case BUSCAR_PARTIDA:
-								
-				//por código
-				//ler o codigo
-				//atribuir no novoIndice.primaria
+				scanf("%d", &opcao2);
+				getchar();
 
-				//buscarPrimario no vetorPrimario
-				busca =  buscarPartida(indexStruct *vetorPrimario, int tamanhoPrimario, char *chavePK);
+				switch(opcao2) {
+					//por código
+					case 1:
+						//Leitura da chave primaria
+						scanf("%8[^\n]", busca_chave_primaria);
+						getchar();
 
-				if(busca != -1)
-					//busca tem o valor do rrn, agora é dar um seek direto no arquivo de dados!
-									
-				
-				/*por nome da equipe vencedora
-				por apelido do mvp*/
-				//ler o campo de mvp ou equipe vencedora
-				//atribuir no novo.IndiceSecundario // 2 vetores?
-				
-				//buscarSecundário no vetorSecundario
-					//return 
-				
+						flag = 0;
+
+						for(i=0; i<tamanhoPrimario; i++){
+							if(strcmp(vetorPrimario[i].primaria, busca_chave_primaria) == 0){
+								imprimirPartida(data_file, vetorPrimario[i].rrn);
+								flag = 1;
+								break;
+							}
+						}
+						
+						if(!flag)
+							printf(REGISTRO_N_ENCONTRADO);
+							//imprimirPartida(index_file); //Completar a funcao
+					break;
+
+					//por nome da equipe vencedora
+					case 2:
+						scanf("%39[^\n]", busca_nome_vencedora);
+						getchar();
+						//if(!buscarPartida()) //n é buscarPartida(), pois é por indice secundario
+						//	printf(REGISTRO_N_ENCONTRADO);
+						//else
+							//fazer um for para todas as partidas encontradas chamando a função imprimirPartida() para cada uma (?)
+					break;
+
+					//por apelido do mvp
+					case 3:
+						scanf("%39[^\n]", busca_apelido_mvp);
+						//if(!buscarPartida()) //n é buscarPartida(), pois é por indice secundario
+						//	printf(REGISTRO_N_ENCONTRADO);
+						//else
+							//fazer um for para todas as partidas encontradas chamando a função imprimirPartida() para cada uma (?)
+					break;
+				}
 			break;
 
 			case REMOVER_PARTIDA:
-			
-				if(buscarPartida()) //buscarPrimario e buscarSecundario.
-					//se encontrar devolve a posicao
-					removerPartida();				
-				else
-					printf(PARTIDA_N_ENCONTRADA);
+
+				scanf("%8[^\n]", busca_chave_primaria);
+				getchar();
+
+				flag = 0;
+
+					for(i=0; i<tamanhoPrimario; i++){
+						if(strcmp(vetorPrimario[i].primaria, busca_chave_primaria) == 0){
+							vetorPrimario[i].primaria[7] = 'Z';
+							flag = 1;
+							//printf("%s\n", vetorPrimario[i].primaria);
+							break;
+						}
+					}
+					
+					if(!flag)
+						printf(REGISTRO_N_ENCONTRADO);
+
+				//se encontrar devolve a posicao
+				//	removerPartida();				
+				//else
+				//	printf(PARTIDA_N_ENCONTRADA);
 			break;
 
 			case MODIFICAR_DURACAO:
-			
-				if(buscarPartida())
-					//se encontrar devolve a posicao
-					alterarPartida();
 				
-				else
+				scanf("%8[^\n]", busca_chave_primaria);
+				getchar();
+
+
+				scanf("%5[^\n]", altera_duracao);
+				getchar();
+
+				flag = 0;
+	
+				for(i=0; i<tamanhoPrimario; i++){
+					if(strcmp(vetorPrimario[i].primaria, busca_chave_primaria) == 0){
+						printf("%s\n", altera_duracao);				
+						flag = alterarPartida(data_file, vetorPrimario[i].rrn, altera_duracao);
+						//printf("%s\n", vetorPrimario[i].primaria);
+						break;
+					}
+				}
+					
+				if(!flag)
 					printf(PARTIDA_N_ENCONTRADA);
+
 			break;
 
 			case LISTAR_PARTIDAS:
-				/*por código
-				por nome da equipe vencedora
-				por apelido do mvp*/
+				scanf("%d", &opcao2);
+				getchar();
+
+				switch(opcao2) {
+					//por codigo
+
+					case 1:
+						for(i=0; i<tamanhoPrimario; i++){
+								imprimirPartida(data_file, vetorPrimario[i].rrn);
+						}
+
+						//exibe na ordem lexicografica
+					break;
+
+					//por nome da equipe vencedora
+					case 2:
+						//exibe na ordem lexicografica do nome da equipe vencedora
+					break;
+
+					//por apelido do mvp
+					case 3:
+						//exibe na ordem lexicografica do nome do mvp
+					break;
+				}
 			break;
 
 			case LIBERAR_ESPACO:
-
-				
-				//AO ACABAR, ATRIBUIR O VALOR DO QTDRRN CORRETO! o ultimo RRN+192.
+				//liberar espaço fisico (remoção propriamente dita) e atualização dos indices (rrn?)
 			break;
 
 			case 7:
+				//atualizar os indices no disco (?)
+				
+				//atualizar indice primario
+				//fprintf(index_file, "N");
+				//rewind(index_file);
+				//fprintf(index_file, "N\n");								
+			
+				fclose(index_file);				
+				
+				index_file = fopen("iprimary.idx", "w+");
+				
+				for(i=0; i< tamanhoPrimario; i++)
+					fprintf(index_file, "@%s@%llu", vetorPrimario[i].primaria, vetorPrimario[i].rrn);
+				
+				rewind(index_file);
+				fprintf(index_file, "S\n");								
+				fclose(index_file);				
+
+				fclose(data_file);
+
+				//fclose(winner_index_file);
+				//printf("AQUI!\n");
+				//fclose(mvp_index_file);
+				//liberar memoria alocada
 				return 0;
 			break;
 
@@ -239,6 +341,7 @@ Partida inserirPartida(){
 	Partida novo;
 	char equipeAzul[40], equipeVermelha[40], equipeVencedora[40], apelidoMvp[40];
 	char duracaoPartida[6], placarAzul[3], placarVermelha[3], chavePK[9];
+	int flag;
 
 	//Leitura das equipes que jogaram a partida
 	le_equipe(novo.equipe_azul);
@@ -249,6 +352,14 @@ Partida inserirPartida(){
 
 	//Leitura da duracao da partida
 	le_duracao(novo.duracao);
+	// flag = 0;
+	// do {
+	// 	scanf("%5[^\n]", novo.duracao);
+	// 	getchar();	//Tira \n do buffer
+	// 	flag = strlen(novo.duracao);
+	// 	if(flag != 5)
+	// 		printf("ROLA");
+	// } while (flag != 5);
 
 	//Leitura da equipe que venceu a partida
 	le_vencedora(novo.equipe_vencedora, novo.equipe_azul, novo.equipe_vermelha);
@@ -272,11 +383,9 @@ Partida inserirPartida(){
 	novo.chave_primaria[7] = novo.data[4];
 
 	novo.chave_primaria[8] = '\0';
-	puts(novo.chave_primaria);
 
 	return novo;
 }
-
 
 /* Retorna 1 se o arquivo de dados existir */
 int verificarArquivoDados(FILE *dataFile) {
@@ -319,7 +428,7 @@ int criarIndicePrimario(FILE *primFile) {
 /* Retorna 0 se o arquivo de indices secundarios foi criado com sucesso */
 int criarIndiceSecundario(FILE *secFile, char *nome) {
 	secFile = fopen(nome, "w");
-	if(!secFile) {
+	if(secFile == NULL) {
 		perror("Ocorreu um erro ao abrir o arquivo de índices secundário!\n");
 		return 1;	
 	}
@@ -327,17 +436,39 @@ int criarIndiceSecundario(FILE *secFile, char *nome) {
 	return 0;
 }
 
+/* Retorna -1 se a partida não for encontrada; se for, retorna o rrn */
+int buscarPartida(indexStruct *vetorPrimario, int tamanhoPrimario, char *chavePK){
+	
+	int i, compara=0;
+
+	for(i = 0; i < tamanhoPrimario; i++) {
+		compara = strcmp(chavePK, vetorPrimario[i].primaria);
+		if(compara == 0)
+			return vetorPrimario[i].rrn;
+		if(compara > 0)
+			return -1;
+	}
+
+	return -1;
+}
+
 int carregarIndices(char **indices) {
-
-	return 0;
 }
 
-int buscarPartida() {
-	return 0;
-}
+int alterarPartida(FILE *data_file, int rrn, char *altera_duracao) {
+	//imprimir partida formatada, dados na ordem em que foram inseridos pelo usuario
+	FILE *ponteiro;
+	char caractere;
+	int flag=0;
 
-int alterarPartida() {
-	return 0;
+	ponteiro = data_file; 
+
+	// posicionar o cursor na posicao do rrn
+	fseek(ponteiro, rrn+37, SEEK_SET);
+
+	fprintf(ponteiro, "%s", altera_duracao);
+	
+	return 1;
 }
 
 int removerPartida() {
@@ -356,40 +487,60 @@ int atualizarIndices() {
 	return 0;
 }
 
+void imprimirPartida(FILE *data_file, int rrn) {
+	//imprimir partida formatada, dados na ordem em que foram inseridos pelo usuario
+	FILE *ponteiro;
+	char caractere;
+	int flag=0;
+
+	ponteiro = data_file; 
+
+	// posicionar o cursor na posicao do rrn
+	fseek(ponteiro, rrn+9, SEEK_SET);
+
+	while(flag<192){
+		
+		caractere = fgetc(ponteiro);
+
+		if(caractere == '@')
+			printf("\n");
+		else if(caractere == '#'){
+			printf("\n");	
+			break;
+		}
+		else
+			printf("%c", caractere);
+
+		flag++;
+	}
+}
+
 /*	Retorna 0 se estourar o numero de tamanhoPrimario */
 int ordenaIndicePrimario(indexStruct *vetorPrimario, int tamanhoPrimario, indexStruct novoIndice){
 	
 	int i, j;	
 
-	if(tamanhoPrimario == 10000)
+	if(tamanhoPrimario == 10000){
 		return 0;
+	}
 
-	for(i=0; i < tamanhoPrimario; i++){
-		if(strcmp(vetorPrimario[i].primaria,novoIndice.primaria) > 0){
-			for(j=tamanhoPrimario-1; j>=i; j--){
+	if(tamanhoPrimario == 0){
+		vetorPrimario[0] = novoIndice;
+		return 1;
+	}
+
+	for(i=0; i < tamanhoPrimario; i++) {
+		if(strcmp(vetorPrimario[i].primaria, novoIndice.primaria) > 0) {
+			for(j=tamanhoPrimario-1; j>=i; j--) {
 				vetorPrimario[j+1] = vetorPrimario[j]; 
 			}
-			vetorPrimario[i] = novoIndice;	
+			vetorPrimario[i] = novoIndice;
 			return 1;		
 		}
 	}
 
+	vetorPrimario[i] = novoIndice;
 	return 1;
-}
-
-int buscarPartida(indexStruct *vetorPrimario, int tamanhoPrimario, char *chavePK){
-	
-	int i, compara=0;
-
-	for(i=0; i<tamanhoPrimario; i++){
-		compara = strcmp(chavePK, vetorPrimario[i].primaria);
-		if(compara == 0)
-			return vetorPrimario[i].rrn;
-		if(compara > 0)
-			return -1;
-	}
-
-	return -1;
 }
 
 /* Le o nome de uma das equipes */
@@ -412,12 +563,10 @@ void le_duracao(char duracao_chamada[]) {
 		duracao[2] = getchar();
 		scanf("%c%c", &duracao[3], &duracao[4]);
 		getchar(); //Tira \n do buffer
+		duracao[5] = '\0';
+		//printf("%c%c:%c%c", duracao[0], duracao[1], duracao[3], duracao[4]);
 		//A condição a seguir obriga que a duração seja do formato "nn:nn" onde n é qualquer numero natural
-		if(duracao[2] != ':' || (duracao[0] != '1' && duracao[0] != '2' && duracao[0] != '3' && duracao[0] != '4' && duracao[0] != '5' && duracao[0] != '6' && duracao[0] != '7' && duracao[0] != '8' && duracao[0] != '9'
-								&& duracao[1] != '1' && duracao[1] != '2' && duracao[1] != '3' && duracao[1] != '4' && duracao[1] != '5' && duracao[1] != '6' && duracao[1] != '7' && duracao[1] != '8' && duracao[1] != '9'
-								&& duracao[3] != '1' && duracao[3] != '2' && duracao[3] != '3' && duracao[3] != '4' && duracao[3] != '5' && duracao[3] != '6' && duracao[3] != '7' && duracao[3] != '8' && duracao[3] != '9'
-								&& duracao[4] != '1' && duracao[4] != '2' && duracao[4] != '3' && duracao[4] != '4' && duracao[4] != '5' && duracao[4] != '6' && duracao[4] != '7' && duracao[4] != '8' && duracao[4] != '9')
-							 || (duracao[0] == '0' && duracao[1] == '0' && duracao[3] == '0' && duracao[4] == '0')) {
+		if(duracao[2] != ':' ) {
 			printf(ENTRADA_INVALIDA);
 			flag = 1;
 		}
