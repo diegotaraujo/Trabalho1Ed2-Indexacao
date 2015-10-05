@@ -44,6 +44,8 @@ typedef struct partida {
 typedef struct {
 	char primaria[9];
 	long long int rrn;
+	char vencedora[40];
+	char mvp[40];
 } indexStruct;
 
 //Prototipos das funções usadas
@@ -76,10 +78,10 @@ int main () {
 	FILE *data_file, *index_file, *winner_index_file, *mvp_index_file;
 	int opcao, opcao2;
 	int existe, flag, indiceRemove;
-	int tamanho, numero_sharps, qtdRRN=0, i, j, tamanhoPrimario=0;
-	char c, busca_chave_primaria[9], busca_nome_vencedora[40], busca_apelido_mvp[40], altera_duracao[6], controle;
+	int tamanho, numero_sharps, qtdRRN=0, i, j, tamanhoPrimario=0, tamanhoSecundarioVencedor=0, tamanhoSecundarioMvp=0;
+	char c, busca_chave_primaria[9], busca_nome_vencedora[40], busca_apelido_mvp[40], altera_duracao[6], controle, ajuda[40];
 	Partida partida;
-	indexStruct vetorPrimario[10000], novoIndice;
+	indexStruct vetorPrimario[10000], vetorSecundarioVencedor[10000], vetorSecundarioMvp[10000],novoIndice;
 
 	/* Ao iniciar
 		-Verificar se existe o arquivo de dados
@@ -91,7 +93,7 @@ int main () {
 	if(!existe)
 		data_file = fopen("matches.dat", "w");
 	else 
-		data_file = fopen("matches.dat", "a");	
+		data_file = fopen("matches.dat", "a+");	
 	
 	existe = verificarIndicePrimario(index_file);
 	if(!existe)
@@ -101,31 +103,38 @@ int main () {
 		
 		fscanf(index_file, "%c\n", &controle);
 		if(controle == 'S'){
-			printf("Indice primario atualizado\n");
 			i=0;
 
 			while(!feof(index_file)){
 				fscanf(index_file, "%s %lld ", vetorPrimario[i].primaria, &vetorPrimario[i].rrn);
-
 				tamanhoPrimario++;
 				i++;
 				qtdRRN+=192;
 			}
 		}
 		else{
-			printf("Indice primário desatualizado\n");
 			i=0;
-			printf("AAAAAAAAAAA!!\n");
 
-			while(fscanf(data_file, "%s", vetorPrimario[i].primaria) != EOF){
+			
+			while(fscanf(data_file, "%c", &vetorPrimario[i].primaria[0]) != EOF){
+				//fscanf(data_file, "%c", &vetorPrimario[i].primaria[0]);
+				fscanf(data_file, "%c", &vetorPrimario[i].primaria[1]);
+				fscanf(data_file, "%c", &vetorPrimario[i].primaria[2]);
+				fscanf(data_file, "%c", &vetorPrimario[i].primaria[3]);
+				fscanf(data_file, "%c", &vetorPrimario[i].primaria[4]);
+				fscanf(data_file, "%c", &vetorPrimario[i].primaria[5]);
+				fscanf(data_file, "%c", &vetorPrimario[i].primaria[6]);
+				fscanf(data_file, "%c", &vetorPrimario[i].primaria[7]);
+				vetorPrimario[i].primaria[8] = '\0';
+			
 				vetorPrimario[i].rrn  = qtdRRN;
 				tamanhoPrimario++;
 				i++;
 				qtdRRN+=192;
 
-				fseek(data_file, (192 - strlen(vetorPrimario[i].primaria)), SEEK_CUR);
+				fseek(data_file, 184, SEEK_CUR);
 			}
-
+			
 			for(i=0; i< tamanhoPrimario; i++){
 				printf("%s %lld\n", vetorPrimario[i].primaria, vetorPrimario[i].rrn);
 			}
@@ -134,9 +143,113 @@ int main () {
 		fclose(index_file);
 	}
 
+	// INDICE SECUNDARIO (EQUIPE VENCEDORA)
+
+	existe = verificarIndiceSecundario(winner_index_file, "iwinner.idx");
+
+	if(!existe){
+		winner_index_file = fopen("iwinner.idx", "w");
+	}
+	else{
+		winner_index_file = fopen("iwinner.idx", "r");
+
+		fscanf(winner_index_file, "%c\n", &controle);
+
+		if(controle == 'S'){
+			i=0;
+			while(fscanf(winner_index_file, "%[^#]#%[^#]#", &vetorSecundarioVencedor[i].primaria, &vetorSecundarioVencedor[i].vencedora) != EOF){
+				//19 + 2 nomes de equipes
+				tamanhoSecundarioVencedor++;
+				i++;
+			}
+		}
+		else{
+			i=0;
+			j=0;
+			while(fscanf(winner_index_file, "%[^@]@", &vetorSecundarioVencedor[i].primaria) != EOF){
+				j+=strlen(vetorSecundarioVencedor[i].primaria);
+				fscanf(winner_index_file, "%[^@]@", &vetorSecundarioVencedor[i].vencedora); //desconsidera
+				j+=strlen(vetorSecundarioVencedor[i].vencedora);
+				fscanf(winner_index_file, "%[^@]@", &vetorSecundarioVencedor[i].vencedora); //desconsidera
+				j+=strlen(vetorSecundarioVencedor[i].vencedora);
+				fscanf(winner_index_file, "%[^@]@", &vetorSecundarioVencedor[i].vencedora); //desconsidera
+				j+=strlen(vetorSecundarioVencedor[i].vencedora);
+				fscanf(winner_index_file, "%[^@]@", &vetorSecundarioVencedor[i].vencedora); //desconsidera
+				j+=strlen(vetorSecundarioVencedor[i].vencedora);
+				fscanf(winner_index_file, "%[^@]@", &vetorSecundarioVencedor[i].vencedora);
+				j+=strlen(vetorSecundarioVencedor[i].vencedora);
+
+				fseek(winner_index_file, 6, SEEK_CUR);
+				j+=6;
+
+				fscanf(winner_index_file, "%[^@]@", &ajuda);
+				j+= strlen(ajuda);
+
+				fseek(winner_index_file, (192-j), SEEK_CUR);
+
+				tamanhoSecundarioVencedor++;
+				i++;
+			}
+		}
+	}
+
+	fclose(winner_index_file);
+
+	// INDICE SECUNDARIO (MVP)
+
+	existe = verificarIndiceSecundario(mvp_index_file, "imvp.idx");
+
+	if(!existe){
+		mvp_index_file = fopen("imvp.idx", "w");
+	}
+	else{
+		mvp_index_file = fopen("imvp.idx", "r");
+
+		fscanf(mvp_index_file, "%c\n", &controle);
+
+		if(controle == 'S'){
+			i=0;
+			while(fscanf(mvp_index_file, "%[^#]#%[^#]#", &vetorSecundarioMvp[i].primaria, &vetorSecundarioMvp[i].mvp) != EOF){
+				tamanhoSecundarioMvp++;
+				i++;
+			}
+		}
+		else{
+			i=0;
+			j=0;
+			while(fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].primaria) != EOF){
+				j+=strlen(vetorSecundarioMvp[i].primaria);
+				fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].mvp); //desconsidera
+				j+=strlen(vetorSecundarioMvp[i].mvp);
+				fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].mvp); //desconsidera
+				j+=strlen(vetorSecundarioMvp[i].mvp);
+				fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].mvp); //desconsidera
+				j+=strlen(vetorSecundarioMvp[i].mvp);
+				fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].mvp); //desconsidera
+				j+=strlen(vetorSecundarioMvp[i].mvp);
+				fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].mvp); //desconsidera
+				j+=strlen(vetorSecundarioMvp[i].mvp); 
+				fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].mvp); //desconsidera
+				j+=strlen(vetorSecundarioMvp[i].mvp);
+				fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].mvp); //desconsidera
+				j+=strlen(vetorSecundarioMvp[i].mvp);
+				fscanf(mvp_index_file, "%[^@]@", &vetorSecundarioMvp[i].mvp); //desconsidera
+				j+=strlen(vetorSecundarioMvp[i].mvp);
+
+				fseek(mvp_index_file, (192-j), SEEK_CUR);
+
+				tamanhoSecundarioMvp++;
+				i++;
+			}
+		}
+	}
+
+	fclose(mvp_index_file);
+
 	do {
 		scanf("%d", &opcao);
 		getchar();
+
 
 		switch(opcao) {
 			case INSERIR_PARTIDA:
@@ -160,7 +273,6 @@ int main () {
 				}
 				fflush(data_file);
 
-				/* Inserção ordenada em index_file */
 				strcpy(novoIndice.primaria, partida.chave_primaria);				
 				novoIndice.rrn = qtdRRN;
 
@@ -178,7 +290,28 @@ int main () {
 						printf("Vetor de indices primarios cheio!\n");
 
 					qtdRRN+=192;
-					tamanhoPrimario+=1;
+					tamanhoPrimario++;
+
+					novoIndice.rrn = 0;
+					strcpy(novoIndice.vencedora, partida.equipe_vencedora);
+					if(!ordenaIndicePrimario(vetorSecundarioVencedor, tamanhoSecundarioVencedor, novoIndice))
+						printf("Vetor de indices secundarios(vencedora) cheio!\n");
+					tamanhoSecundarioVencedor++;
+
+					strcpy(novoIndice.mvp,partida.apelido_mvp);
+					if(!ordenaIndicePrimario(vetorSecundarioMvp, tamanhoSecundarioMvp, novoIndice))
+						printf("Vetor de indices secundarios(mvp) cheio!\n");
+					tamanhoSecundarioMvp++;
+
+					winner_index_file = fopen("iwinner.idx", "w");
+					rewind(winner_index_file);
+					fprintf(winner_index_file, "N\n");								
+					fclose(winner_index_file);
+
+					mvp_index_file = fopen("imvp.idx", "w");
+					rewind(mvp_index_file);
+					fprintf(mvp_index_file, "N\n");								
+					fclose(mvp_index_file);
 
 					index_file = fopen("iprimary.idx", "w");
 					rewind(index_file);
@@ -189,9 +322,6 @@ int main () {
 					printf("Chave primaria já inserida!\n");
 				}
 
-				/* Inserção da partida em winner_index_file */
-				/* Inserção da partida em mvp_index_file */
-				//imprimirPartida(data_file);
 			break;
 
 			case BUSCAR_PARTIDA:
@@ -215,36 +345,59 @@ int main () {
 						
 						if(!flag){
 							printf(REGISTRO_N_ENCONTRADO);
+						}
 
-							index_file = fopen("iprimary.idx", "w");
-							rewind(index_file);
-							fprintf(index_file, "N\n");								
-							fclose(index_file);
-						}
-						else{
-							printf("Chave primaria já inserida!\n");
-						}
 					break;
 
 					//por nome da equipe vencedora
 					case 2:
 						scanf("%39[^\n]", busca_nome_vencedora);
 						getchar();
-						//if(!buscarPartida()) //n é buscarPartida(), pois é por indice secundario
-						//	printf(REGISTRO_N_ENCONTRADO);
-						//else
-							//fazer um for para todas as partidas encontradas chamando a função imprimirPartida() para cada uma (?)
+
+						flag = 0;
+
+						for(i=0; i<tamanhoSecundarioVencedor; i++){
+							if(strcmp(vetorSecundarioVencedor[i].vencedora, busca_nome_vencedora) == 0){
+								for(j=0; j<tamanhoPrimario; j++){
+									if(strcmp(vetorSecundarioVencedor[i].primaria, vetorPrimario[j].primaria) == 0){
+										imprimirPartida(data_file, vetorPrimario[j].rrn);
+										flag = 1;
+										break;
+									}
+								}
+							}
+						}
+
+						if(!flag){
+							printf(REGISTRO_N_ENCONTRADO);
+						}
+
 					break;
 
 					//por apelido do mvp
 					case 3:
 						scanf("%39[^\n]", busca_apelido_mvp);
-						//if(!buscarPartida()) //n é buscarPartida(), pois é por indice secundario
-						//	printf(REGISTRO_N_ENCONTRADO);
-						//else
-							//fazer um for para todas as partidas encontradas chamando a função imprimirPartida() para cada uma (?)
+						getchar();
+
+						for(i=0; i<tamanhoSecundarioMvp; i++){
+							if(strcmp(vetorSecundarioMvp[i].mvp, busca_apelido_mvp) == 0){
+								for(j=0; j<tamanhoPrimario; j++){
+									if(strcmp(vetorSecundarioMvp[i].primaria, vetorPrimario[j].primaria) == 0){
+										imprimirPartida(data_file, vetorPrimario[j].rrn);
+										flag = 1;
+										break;
+									}
+								}
+							}
+						}
+
+						if(!flag){
+							printf(REGISTRO_N_ENCONTRADO);
+						}
+						
 					break;
 				}
+
 			break;
 
 			case REMOVER_PARTIDA:
@@ -256,23 +409,43 @@ int main () {
 
 					for(i=0; i<tamanhoPrimario; i++){
 						if(strcmp(vetorPrimario[i].primaria, busca_chave_primaria) == 0){
+							for(j=0; j<tamanhoSecundarioVencedor; j++){
+								if(strcmp(vetorSecundarioVencedor[j].primaria, vetorPrimario[i].primaria)
+									vetorSecundarioVencedor[j].primaria[7] = 'Z';
+							}
+							for(j=0; j<tamanhoSecundarioMvp; j++){
+								if(strcmp(vetorSecundarioMvp[j].primaria, vetorPrimario[i].primaria)
+									vetorSecundarioMvp[j].primaria[7] = 'Z';
+							}
 							vetorPrimario[i].primaria[7] = 'Z';
 							flag = 1;
 							break;
 						}
 					}
 					
-					if(!flag){
-						printf(REGISTRO_N_ENCONTRADO);
+				if(!flag){
+					printf(REGISTRO_N_ENCONTRADO);
 
-						index_file = fopen("iprimary.idx", "w");
-						rewind(index_file);
-						fprintf(index_file, "N\n");								
-						fclose(index_file);
-					}
-					else{
-						printf("Chave primaria já inserida!\n");
-					}
+					index_file = fopen("iprimary.idx", "w");
+					winner_index_file = fopen("iwinner.idx", "w");
+					mvp_index_file = fopen("imvp.idx", "w");
+
+
+					rewind(index_file);
+					rewind(winner_index_file);
+					rewind(mvp_index_file);
+
+					fprintf(index_file, "N\n");	
+					fprintf(winner_index_file, "N\n");								
+					fprintf(mvp_index_file, "N\n");			
+
+					fclose(index_file);
+					fclose(winner_index_file);
+					fclose(mvp_index_file);
+				}
+				else{
+					printf("Chave primaria já inserida!\n");
+				}
 			break;
 
 			case MODIFICAR_DURACAO:
@@ -296,14 +469,6 @@ int main () {
 					
 				if(!flag){
 					printf(REGISTRO_N_ENCONTRADO);
-
-					index_file = fopen("iprimary.idx", "w");
-					rewind(index_file);
-					fprintf(index_file, "N\n");								
-					fclose(index_file);
-				}
-				else{
-					printf("Chave primaria já inserida!\n");
 				}
 
 			break;
@@ -315,39 +480,70 @@ int main () {
 				switch(opcao2) {
 					case 1:
 						for(i=0; i<tamanhoPrimario; i++){
-								imprimirPartida(data_file, vetorPrimario[i].rrn);
+								if(vetorPrimario[i].primaria[7] != 'Z')
+									imprimirPartida(data_file, vetorPrimario[i].rrn);
 						}
 					break;
 
-					//por nome da equipe vencedora
 					case 2:
-						//exibe na ordem lexicografica do nome da equipe vencedora
+						for(i=0; i<tamanhoSecundarioVencedor; i++){
+							for(j=0; j<tamanhoPrimario; j++){
+								if(vetorPrimario[j].primaria[7] != 'Z')
+									if(strcmp(vetorSecundarioVencedor[i].primaria, vetorPrimario[j].primaria) == 0)
+										imprimirPartida(data_file, vetorPrimario[i].rrn);
+							}
+						}
 					break;
 
-					//por apelido do mvp
 					case 3:
-						//exibe na ordem lexicografica do nome do mvp
+						for(i=0; i<tamanhoSecundarioMvp; i++){
+							for(j=0; j<tamanhoPrimario; j++){
+								if(vetorPrimario[j].primaria[7] != 'Z')
+									if(strcmp(vetorSecundarioMvp[i].primaria, vetorPrimario[j].primaria) == 0)
+										imprimirPartida(data_file, vetorPrimario[i].rrn);
+							}
+						}
+
 					break;
 				}
+				
 			break;
 
 			case LIBERAR_ESPACO:
-				//liberar espaço fisico (remoção propriamente dita) e atualização dos indices (rrn?)
+
 			break;
 
 			case 7:
-				//atualizar os indices no disco (?)						
-							
+
+				//atualizar os indices no disco (?)										
 				index_file = fopen("iprimary.idx", "w+");
+				winner_index_file = fopen("iwinner.idx", "w+");
+				mvp_index_file = fopen("imvp.idx", "w+");
 				
-				fprintf(index_file, "N\n");								
+				fprintf(index_file, "N\n");
+				fprintf(winner_index_file, "N\n");
+				fprintf(mvp_index_file, "N\n");								
+
+				for(i=0; i< tamanhoSecundarioMvp; i++){
+					fprintf(mvp_index_file, "%s#%s#", vetorSecundarioMvp[i].primaria, vetorSecundarioMvp[i].mvp);
+				}
+
+				for(i=0; i< tamanhoSecundarioVencedor; i++){
+					fprintf(winner_index_file, "%s#%s#", vetorSecundarioVencedor[i].primaria, vetorSecundarioVencedor[i].vencedora);
+				}
 
 				for(i=0; i< tamanhoPrimario; i++){
 					fprintf(index_file, "%s %lld ", vetorPrimario[i].primaria, vetorPrimario[i].rrn);
 				}
 				
+				rewind(mvp_index_file);
+				rewind(winner_index_file);
 				rewind(index_file);
-				fprintf(index_file, "S\n");								
+				fprintf(mvp_index_file, "S\n");
+				fprintf(winner_index_file, "S\n");
+				fprintf(index_file, "S\n");	
+				fclose(mvp_index_file);
+				fclose(winner_index_file);							
 				fclose(index_file);				
 
 				fclose(data_file);
